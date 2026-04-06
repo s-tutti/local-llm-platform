@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../base
+  - patches/hpa.yaml
 
 patches:
   - path: patches/ollama-resources.yaml
-  - path: patches/hpa.yaml

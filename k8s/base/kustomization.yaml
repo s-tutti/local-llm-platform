@@ -16,5 +16,7 @@ resources:
   - monitoring/grafana-dashboards.yaml
   - monitoring/grafana-deployment.yaml
 
-commonLabels:
-  app.kubernetes.io/managed-by: kustomize
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false
