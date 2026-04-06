@@ -8,6 +8,21 @@
             "type": "command",
             "command": "bash .claude/hooks/pre-protect-config.sh",
             "statusMessage": "Checking config protection..."
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-protect-secrets.sh",
+            "statusMessage": "Checking secret protection..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-block-destructive.sh",
+            "statusMessage": "Checking for destructive commands..."
           }
         ]
       }
