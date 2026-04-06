@@ -1,0 +1,53 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.eks.aws_eks_cluster.main",
+      "type": "aws_eks_cluster",
+      "change": {
+        "after": {
+          "vpc_config": [
+            {
+              "endpoint_public_access": false,
+              "endpoint_private_access": true
+            }
+          ],
+          "encryption_config": [
+            {
+              "resources": ["secrets"]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "address": "module.eks.aws_eks_node_group.gpu",
+      "type": "aws_eks_node_group",
+      "change": {
+        "after": {
+          "capacity_type": "SPOT"
+        }
+      }
+    },
+    {
+      "address": "module.vpc.aws_vpc.main",
+      "type": "aws_vpc",
+      "change": {
+        "after": {}
+      }
+    },
+    {
+      "address": "module.vpc.aws_flow_log.vpc",
+      "type": "aws_flow_log",
+      "change": {
+        "after": {}
+      }
+    },
+    {
+      "address": "module.security.aws_budgets_budget.monthly",
+      "type": "aws_budgets_budget",
+      "change": {
+        "after": {}
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+schemaVersion: "2.0.0"
+
+metadataTest:
+  exposedPorts: ["8000"]
+  cmd: ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+  user: "nobody"
+  workdir: "/app"
+
+fileExistenceTests:
+  - name: "main.py exists"
+    path: "/app/main.py"
+    shouldExist: true
+  - name: "No .env file leaked"
+    path: "/app/.env"
+    shouldExist: false
+  - name: "No .git directory leaked"
+    path: "/app/.git"
+    shouldExist: false
+
+fileContentTests:
+  - name: "main.py imports FastAPI"
+    path: "/app/main.py"
+    expectedContents: ["from fastapi import"]
+
+commandTests:
+  - name: "Python is available"
+    command: "python"
+    args: ["--version"]
+    expectedOutput: ["Python 3.12"]
+  - name: "uvicorn is importable"
+    command: "python"
+    args: ["-c", "import uvicorn; print('ok')"]
+    expectedOutput: ["ok"]
+  - name: "fastapi is importable"
+    command: "python"
+    args: ["-c", "import fastapi; print(fastapi.__version__)"]
+    expectedOutput: ["0.115"]

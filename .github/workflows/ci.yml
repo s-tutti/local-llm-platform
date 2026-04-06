@@ -83,6 +83,71 @@ jobs:
         with:
           sarif_file: "trivy-results.sarif"
 
+  conftest-terraform:
+    name: Conftest Terraform Policies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install conftest
+        run: |
+          curl -sL https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz | tar xz
+          sudo mv conftest /usr/local/bin/
+      - name: Run OPA policies against good fixture
+        run: conftest test policy/terraform/testdata/plan_good.json -p policy/terraform/
+
+  kubeconform:
+    name: Kubeconform Schema Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+      - name: Validate K8s manifests
+        run: find k8s/base -name '*.yaml' -not -name 'kustomization.yaml' | xargs kubeconform -summary -strict
+
+  conftest-k8s:
+    name: Conftest K8s Policies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install conftest
+        run: |
+          curl -sL https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz | tar xz
+          sudo mv conftest /usr/local/bin/
+      - name: Run OPA policies on K8s manifests
+        run: |
+          for f in k8s/base/ollama/deployment.yaml k8s/base/api-gateway/deployment.yaml k8s/base/monitoring/prometheus-deployment.yaml k8s/base/monitoring/grafana-deployment.yaml; do
+            echo "=== $f ==="
+            conftest test "$f" -p policy/kubernetes/ || true
+          done
+
+  container-structure-test:
+    name: Container Structure Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API Gateway image
+        run: docker build -t llm-platform/api-gateway:test api-gateway/
+      - name: Install container-structure-test
+        run: |
+          curl -sL https://github.com/GoogleContainerTools/container-structure-test/releases/download/v1.19.3/container-structure-test-linux-amd64 -o /usr/local/bin/container-structure-test
+          chmod +x /usr/local/bin/container-structure-test
+      - name: Run structure tests
+        run: container-structure-test test --image llm-platform/api-gateway:test --config api-gateway/container-structure-test.yaml
+
+  archgate:
+    name: ADR Archgate Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run archgate
+        run: npx tsx docs/adr/.rules/ADR-0001.ts . && npx tsx docs/adr/.rules/ADR-0002.ts . && npx tsx docs/adr/.rules/ADR-0003.ts . && npx tsx docs/adr/.rules/ADR-0004.ts .
+
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest

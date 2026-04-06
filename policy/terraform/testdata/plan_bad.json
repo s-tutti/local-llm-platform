@@ -1,0 +1,42 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.eks.aws_eks_cluster.main",
+      "type": "aws_eks_cluster",
+      "change": {
+        "after": {
+          "vpc_config": [
+            {
+              "endpoint_public_access": true,
+              "endpoint_private_access": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "address": "module.eks.aws_eks_node_group.gpu",
+      "type": "aws_eks_node_group",
+      "change": {
+        "after": {
+          "capacity_type": "ON_DEMAND"
+        }
+      }
+    },
+    {
+      "address": "module.eks.aws_security_group.cluster",
+      "type": "aws_security_group",
+      "change": {
+        "after": {
+          "ingress": [
+            {
+              "from_port": 443,
+              "to_port": 443,
+              "cidr_blocks": ["0.0.0.0/0"]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
