@@ -10,9 +10,7 @@ OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.http_client = httpx.AsyncClient(
-        base_url=OLLAMA_BASE_URL, timeout=300.0
-    )
+    app.state.http_client = httpx.AsyncClient(base_url=OLLAMA_BASE_URL, timeout=300.0)
     yield
     await app.state.http_client.aclose()
 
