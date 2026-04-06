@@ -14,20 +14,20 @@
 | ---------------------------------- | ------------------------------------------------------------------ |
 | 機密データをSaaS LLMに送信できない | Ollama によるセルフホスト型LLMを閉域網内にデプロイ                 |
 | クラウドコストが予測不能           | Spotインスタンス + スケジュールスケーリング + AWS Budgets アラート |
-| セキュリティ監査への対応           | ゼロトラストネットワーク + VPC Flow Logs + KMS暗号化               |
+| セキュリティ監査への対応           | ゼロトラストネットワーク + VPC Flow Logs + KMS暗号化 + OPAポリシー |
 | 環境間の構成ドリフト               | Kustomize overlay による宣言的な環境管理                           |
-| 脆弱性の見逃し                     | CI/CDに Trivy + tfsec を統合した自動スキャン                       |
+| 脆弱性の見逃し                     | CI/CDに Trivy + tfsec + OPA/Conftest を統合した自動スキャン        |
 
 ## アーキテクチャ
 
 ```mermaid
 graph TB
     subgraph "開発者ローカル"
-        DEV[開発者] --> KIND[Kind Cluster]
-        KIND --> OL_LOCAL[Ollama<br/>CPU推論]
-        KIND --> API_LOCAL[API Gateway]
-        KIND --> PROM_LOCAL[Prometheus]
-        KIND --> GRAF_LOCAL[Grafana]
+        DEV[開発者] --> K8S_LOCAL[Kind / Minikube]
+        K8S_LOCAL --> OL_LOCAL[Ollama<br/>CPU推論]
+        K8S_LOCAL --> API_LOCAL[API Gateway]
+        K8S_LOCAL --> PROM_LOCAL[Prometheus]
+        K8S_LOCAL --> GRAF_LOCAL[Grafana]
     end
 
     subgraph "AWS クラウド (閉域網)"
@@ -46,8 +46,9 @@ graph TB
 
     subgraph "CI/CD (GitHub Actions)"
         GH[GitHub] --> LINT[Lint<br/>yamllint, terraform fmt]
-        LINT --> SCAN[Security Scan<br/>Trivy, tfsec]
-        SCAN --> BUILD[Build & Push]
+        LINT --> SCAN[Security Scan<br/>Trivy, tfsec, OPA]
+        SCAN --> VALIDATE[Validate<br/>kubeconform, archgate]
+        VALIDATE --> BUILD[Build & Test]
         BUILD --> DEPLOY[Deploy to EKS]
         DEPLOY --> SMOKE[Smoke Test]
     end
@@ -59,16 +60,20 @@ graph TB
 ## プロジェクト構成
 
 ```
-├── docs/adr/           # アーキテクチャ決定記録
-├── infra/terraform/    # AWS インフラ (VPC, EKS, Security)
-│   ├── modules/        # 再利用可能なモジュール
-│   └── environments/   # 環境別変数 (dev, prod)
-├── k8s/                # Kubernetes マニフェスト
-│   ├── base/           # 共通ベース (Ollama, API Gateway, Monitoring)
-│   └── overlays/       # 環境別オーバーレイ (local, production)
-├── scripts/            # ローカル開発スクリプト
-├── api-gateway/        # FastAPI ベース LLM プロキシ
-└── .github/workflows/  # CI/CD パイプライン
+├── docs/adr/              # アーキテクチャ決定記録 (ADR)
+│   └── .rules/            # ADR コンパニオンルール (.rules.ts) + 整合性チェック
+├── infra/terraform/       # AWS インフラ (VPC, EKS, Security)
+│   ├── modules/           # 再利用可能なモジュール
+│   └── environments/      # 環境別変数 (dev, prod)
+├── k8s/                   # Kubernetes マニフェスト
+│   ├── base/              # 共通ベース (Ollama, API Gateway, Monitoring)
+│   └── overlays/          # 環境別オーバーレイ (local, production)
+├── policy/                # OPA/Rego ポリシー (Terraform + K8s)
+├── scripts/               # ローカル開発・テストスクリプト
+│   └── lib/               # 共通ライブラリ (Kind/Minikube ランタイム検出)
+├── api-gateway/           # FastAPI ベース LLM プロキシ
+├── .claude/hooks/         # Claude Code ハーネスフック (lint, security gates)
+└── .github/workflows/     # CI/CD パイプライン
 ```
 
 ## クイックスタート（ローカル開発）
@@ -76,14 +81,13 @@ graph TB
 ### 前提条件
 
 - Docker
-- [Kind](https://kind.sigs.k8s.io/)
+- [Kind](https://kind.sigs.k8s.io/) または [Minikube](https://minikube.sigs.k8s.io/)（自動検出）
 - kubectl
-- kustomize
 
 ### 起動
 
 ```bash
-# 1. Kind クラスタ作成
+# 1. ローカルクラスタ作成 (Kind or Minikube を自動検出)
 ./scripts/setup-local-cluster.sh
 
 # 2. プラットフォームデプロイ
@@ -128,27 +132,30 @@ kubectl apply -k k8s/overlays/production/
 - **ネットワーク**: EKS Private Endpoint + Private Subnet + NAT Gateway
 - **アクセス制御**: AWS SSM Session Manager（踏み台サーバー不要）
 - **暗号化**: KMS によるEKS Secrets暗号化
-- **監査**: VPC Flow Logs + CloudTrail
-- **CI/CDスキャン**: Trivy（コンテナ脆弱性）+ tfsec（インフラ脆弱性）
+- **監査**: VPC Flow Logs による全トラフィック記録
+- **CI/CDスキャン**: Trivy（コンテナ脆弱性）+ tfsec（インフラ脆弱性）+ OPA/Conftest（ポリシー準拠）
+- **ADR Archgate**: アーキテクチャ決定をコード化した自動制約チェック（CI + Stopフック）
 
 ## コスト最適化 (FinOps)
 
 - GPU ノードは **Spot インスタンス** で 60-90% コスト削減
-- 業務時間外の **スケジュールスケーリング** で GPU ノードを 0 台に
+- GPU ノードグループの `min_size = 0` により **ゼロスケール対応**
 - **AWS Budgets** で 50%, 80%, 100% の閾値アラート
-- **HPA** による API Gateway の自動スケーリング
+- **HPA** による API Gateway の自動スケーリング（production overlay）
 
 ## 技術スタック
 
-| カテゴリ                     | 技術                    |
-| ---------------------------- | ----------------------- |
-| コンテナオーケストレーション | Kubernetes (Kind / EKS) |
-| LLM ランタイム               | Ollama                  |
-| IaC                          | Terraform               |
-| CI/CD                        | GitHub Actions          |
-| セキュリティスキャン         | Trivy, tfsec            |
-| 監視                         | Prometheus, Grafana     |
-| API                          | FastAPI (Python)        |
+| カテゴリ                     | 技術                              |
+| ---------------------------- | --------------------------------- |
+| コンテナオーケストレーション | Kubernetes (Kind / Minikube / EKS) |
+| LLM ランタイム               | Ollama                            |
+| IaC                          | Terraform                         |
+| CI/CD                        | GitHub Actions                    |
+| セキュリティスキャン         | Trivy, tfsec, OPA/Conftest        |
+| マニフェスト検証             | kubeconform, container-structure-test |
+| 監視                         | Prometheus, Grafana               |
+| ADR制約チェック              | Archgate (.rules.ts)              |
+| API                          | FastAPI (Python)                  |
 
 ## ADR (Architecture Decision Records)
 
