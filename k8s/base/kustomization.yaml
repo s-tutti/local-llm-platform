@@ -10,6 +10,11 @@ resources:
   - ollama/service.yaml
   - api-gateway/deployment.yaml
   - api-gateway/service.yaml
+  - monitoring/prometheus-config.yaml
+  - monitoring/prometheus-deployment.yaml
+  - monitoring/grafana-datasource.yaml
+  - monitoring/grafana-dashboards.yaml
+  - monitoring/grafana-deployment.yaml
 
 commonLabels:
   app.kubernetes.io/managed-by: kustomize
