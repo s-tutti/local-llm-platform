@@ -1,0 +1,5 @@
+---
+minimum_severity: MEDIUM
+exclude:
+  # We intentionally use * in flow log IAM policy for CloudWatch Logs
+  - aws-iam-no-policy-wildcards
