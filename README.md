@@ -3,20 +3,20 @@
 > **エンタープライズ向け 閉域網LLM推論基盤**
 > 機密データを外部に出さずに生成AIを活用するための、セキュア・コスト最適化されたインフラ基盤
 
-[![CI](https://github.com/YOUR_USERNAME/local-llm-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/local-llm-platform/actions/workflows/ci.yml)
+[![CI](https://github.com/s-tutti/local-llm-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/s-tutti/local-llm-platform/actions/workflows/ci.yml)
 [![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.5-purple)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-1.31-blue)](https://kubernetes.io/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ## ビジネス課題
 
-| 課題 | 本プラットフォームの解決策 |
-|------|--------------------------|
-| 機密データをSaaS LLMに送信できない | Ollama によるセルフホスト型LLMを閉域網内にデプロイ |
-| クラウドコストが予測不能 | Spotインスタンス + スケジュールスケーリング + AWS Budgets アラート |
-| セキュリティ監査への対応 | ゼロトラストネットワーク + VPC Flow Logs + KMS暗号化 |
-| 環境間の構成ドリフト | Kustomize overlay による宣言的な環境管理 |
-| 脆弱性の見逃し | CI/CDに Trivy + tfsec を統合した自動スキャン |
+| 課題                               | 本プラットフォームの解決策                                         |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| 機密データをSaaS LLMに送信できない | Ollama によるセルフホスト型LLMを閉域網内にデプロイ                 |
+| クラウドコストが予測不能           | Spotインスタンス + スケジュールスケーリング + AWS Budgets アラート |
+| セキュリティ監査への対応           | ゼロトラストネットワーク + VPC Flow Logs + KMS暗号化               |
+| 環境間の構成ドリフト               | Kustomize overlay による宣言的な環境管理                           |
+| 脆弱性の見逃し                     | CI/CDに Trivy + tfsec を統合した自動スキャン                       |
 
 ## アーキテクチャ
 
@@ -97,11 +97,11 @@ curl http://localhost:8080/api/chat \
 
 ### アクセス先
 
-| サービス | URL |
-|---------|-----|
-| API Gateway | http://localhost:8080 |
-| Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3000 (admin/admin) |
+| サービス    | URL                                 |
+| ----------- | ----------------------------------- |
+| API Gateway | http://localhost:8080               |
+| Prometheus  | http://localhost:9090               |
+| Grafana     | http://localhost:3000 (admin/admin) |
 
 ### 停止
 
@@ -140,15 +140,15 @@ kubectl apply -k k8s/overlays/production/
 
 ## 技術スタック
 
-| カテゴリ | 技術 |
-|---------|------|
+| カテゴリ                     | 技術                    |
+| ---------------------------- | ----------------------- |
 | コンテナオーケストレーション | Kubernetes (Kind / EKS) |
-| LLM ランタイム | Ollama |
-| IaC | Terraform |
-| CI/CD | GitHub Actions |
-| セキュリティスキャン | Trivy, tfsec |
-| 監視 | Prometheus, Grafana |
-| API | FastAPI (Python) |
+| LLM ランタイム               | Ollama                  |
+| IaC                          | Terraform               |
+| CI/CD                        | GitHub Actions          |
+| セキュリティスキャン         | Trivy, tfsec            |
+| 監視                         | Prometheus, Grafana     |
+| API                          | FastAPI (Python)        |
 
 ## ADR (Architecture Decision Records)
 
