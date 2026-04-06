@@ -27,6 +27,18 @@
         ]
       }
     ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-archgate.sh",
+            "timeout": 60,
+            "statusMessage": "Running archgate ADR compliance check..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
