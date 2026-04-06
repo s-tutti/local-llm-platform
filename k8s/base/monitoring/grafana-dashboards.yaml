@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+  namespace: llm-platform
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: llm-platform
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: "default"
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 30
+        options:
+          path: /var/lib/grafana/dashboards
+          foldersFromFilesStructure: false
+  llm-platform.json: |
+    {
+      "dashboard": {
+        "title": "LLM Platform Overview",
+        "uid": "llm-platform-overview",
+        "panels": [
+          {
+            "title": "API Gateway - Request Rate",
+            "type": "timeseries",
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"api-gateway\"}[5m])",
+                "legendFormat": "{{method}} {{path}}"
+              }
+            ]
+          },
+          {
+            "title": "API Gateway - Response Time (p95)",
+            "type": "timeseries",
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m]))",
+                "legendFormat": "p95"
+              }
+            ]
+          },
+          {
+            "title": "Ollama - Active Requests",
+            "type": "stat",
+            "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+            "targets": [
+              {
+                "expr": "ollama_active_requests",
+                "legendFormat": "Active"
+              }
+            ]
+          },
+          {
+            "title": "Pod CPU Usage",
+            "type": "timeseries",
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+            "targets": [
+              {
+                "expr": "rate(container_cpu_usage_seconds_total{namespace=\"llm-platform\"}[5m])",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          },
+          {
+            "title": "Pod Memory Usage",
+            "type": "timeseries",
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+            "targets": [
+              {
+                "expr": "container_memory_working_set_bytes{namespace=\"llm-platform\"}",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          }
+        ],
+        "time": { "from": "now-1h", "to": "now" },
+        "refresh": "30s"
+      }
+    }
