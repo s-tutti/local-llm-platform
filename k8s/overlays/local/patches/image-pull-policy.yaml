@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: llm-platform
+spec:
+  template:
+    spec:
+      containers:
+        - name: api-gateway
+          imagePullPolicy: Never
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: llm-platform
+spec:
+  template:
+    spec:
+      containers:
+        - name: ollama
+          imagePullPolicy: IfNotPresent

@@ -6,3 +6,4 @@ resources:
 
 patches:
   - path: patches/ollama-resources.yaml
+  - path: patches/image-pull-policy.yaml
